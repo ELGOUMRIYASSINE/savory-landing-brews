@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -154,28 +153,35 @@ const MenuPage = () => {
     // Reset scroll position when changing tabs
     window.scrollTo(0, 0);
     
-    // Add animation to menu items
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("animate-slideUp");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-    
-    itemRefs.current.forEach((ref) => {
-      if (ref) observer.observe(ref);
-    });
-    
-    return () => {
+    // Add animation to menu items with a slight delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("animate-slideUp");
+              entry.target.style.opacity = "1";
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.1 }
+      );
+      
       itemRefs.current.forEach((ref) => {
-        if (ref) observer.unobserve(ref);
+        if (ref) {
+          observer.observe(ref);
+        }
       });
-    };
+      
+      return () => {
+        itemRefs.current.forEach((ref) => {
+          if (ref) observer.unobserve(ref);
+        });
+      };
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [activeCategory]);
   
   const toggleItemSelection = (id: number) => {
@@ -187,6 +193,52 @@ const MenuPage = () => {
   const filteredItems = filter
     ? menuItems[activeCategory].filter((item) => item.tags?.includes(filter))
     : menuItems[activeCategory];
+  
+  const renderMenuItems = (items: typeof filteredItems) => {
+    return items.map((item, index) => (
+      <div
+        key={item.id}
+        ref={(el) => (itemRefs.current[index] = el)}
+        className="border rounded-lg overflow-hidden flex flex-col md:flex-row opacity-0 transition-all duration-300"
+        style={{ transitionDelay: `${index * 100}ms` }}
+      >
+        <div className="h-48 md:h-auto md:w-1/3">
+          <img
+            src={item.image}
+            alt={item.name}
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <div className="p-6 flex flex-col justify-between md:w-2/3">
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="text-xl font-serif font-bold">{item.name}</h3>
+              <div className="font-medium text-primary">${item.price}</div>
+            </div>
+            <p className="text-muted-foreground mb-4">{item.description}</p>
+            <div className="flex space-x-2 mb-4">
+              {item.tags?.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-2 py-1 bg-secondary text-xs rounded-full text-muted-foreground"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+          <Button
+            variant={selectedItems.includes(item.id) ? "default" : "outline"}
+            size="sm"
+            className={selectedItems.includes(item.id) ? "bg-primary text-white" : ""}
+            onClick={() => toggleItemSelection(item.id)}
+          >
+            {selectedItems.includes(item.id) ? "Added to Order" : "Add to Order"}
+          </Button>
+        </div>
+      </div>
+    ));
+  };
   
   return (
     <>
@@ -260,193 +312,25 @@ const MenuPage = () => {
             
             <TabsContent value="appetizers" className="mt-0">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {filteredItems.map((item, index) => (
-                  <div
-                    key={item.id}
-                    ref={(el) => (itemRefs.current[index] = el)}
-                    className="border rounded-lg overflow-hidden flex flex-col md:flex-row opacity-0 transition-all duration-300"
-                    style={{ transitionDelay: `${index * 100}ms` }}
-                  >
-                    <div className="h-48 md:h-auto md:w-1/3">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-6 flex flex-col justify-between md:w-2/3">
-                      <div>
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-xl font-serif font-bold">{item.name}</h3>
-                          <div className="font-medium text-primary">${item.price}</div>
-                        </div>
-                        <p className="text-muted-foreground mb-4">{item.description}</p>
-                        <div className="flex space-x-2 mb-4">
-                          {item.tags?.map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2 py-1 bg-secondary text-xs rounded-full text-muted-foreground"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <Button
-                        variant={selectedItems.includes(item.id) ? "default" : "outline"}
-                        size="sm"
-                        className={selectedItems.includes(item.id) ? "bg-primary text-white" : ""}
-                        onClick={() => toggleItemSelection(item.id)}
-                      >
-                        {selectedItems.includes(item.id) ? "Added to Order" : "Add to Order"}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                {renderMenuItems(filteredItems)}
               </div>
             </TabsContent>
             
             <TabsContent value="mains" className="mt-0">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {filteredItems.map((item, index) => (
-                  <div
-                    key={item.id}
-                    ref={(el) => (itemRefs.current[index] = el)}
-                    className="border rounded-lg overflow-hidden flex flex-col md:flex-row opacity-0 transition-all duration-300"
-                    style={{ transitionDelay: `${index * 100}ms` }}
-                  >
-                    <div className="h-48 md:h-auto md:w-1/3">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-6 flex flex-col justify-between md:w-2/3">
-                      <div>
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-xl font-serif font-bold">{item.name}</h3>
-                          <div className="font-medium text-primary">${item.price}</div>
-                        </div>
-                        <p className="text-muted-foreground mb-4">{item.description}</p>
-                        <div className="flex space-x-2 mb-4">
-                          {item.tags?.map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2 py-1 bg-secondary text-xs rounded-full text-muted-foreground"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <Button
-                        variant={selectedItems.includes(item.id) ? "default" : "outline"}
-                        size="sm"
-                        className={selectedItems.includes(item.id) ? "bg-primary text-white" : ""}
-                        onClick={() => toggleItemSelection(item.id)}
-                      >
-                        {selectedItems.includes(item.id) ? "Added to Order" : "Add to Order"}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                {renderMenuItems(filteredItems)}
               </div>
             </TabsContent>
             
             <TabsContent value="desserts" className="mt-0">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {filteredItems.map((item, index) => (
-                  <div
-                    key={item.id}
-                    ref={(el) => (itemRefs.current[index] = el)}
-                    className="border rounded-lg overflow-hidden flex flex-col md:flex-row opacity-0 transition-all duration-300"
-                    style={{ transitionDelay: `${index * 100}ms` }}
-                  >
-                    <div className="h-48 md:h-auto md:w-1/3">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-6 flex flex-col justify-between md:w-2/3">
-                      <div>
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-xl font-serif font-bold">{item.name}</h3>
-                          <div className="font-medium text-primary">${item.price}</div>
-                        </div>
-                        <p className="text-muted-foreground mb-4">{item.description}</p>
-                        <div className="flex space-x-2 mb-4">
-                          {item.tags?.map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2 py-1 bg-secondary text-xs rounded-full text-muted-foreground"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <Button
-                        variant={selectedItems.includes(item.id) ? "default" : "outline"}
-                        size="sm"
-                        className={selectedItems.includes(item.id) ? "bg-primary text-white" : ""}
-                        onClick={() => toggleItemSelection(item.id)}
-                      >
-                        {selectedItems.includes(item.id) ? "Added to Order" : "Add to Order"}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                {renderMenuItems(filteredItems)}
               </div>
             </TabsContent>
             
             <TabsContent value="drinks" className="mt-0">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {filteredItems.map((item, index) => (
-                  <div
-                    key={item.id}
-                    ref={(el) => (itemRefs.current[index] = el)}
-                    className="border rounded-lg overflow-hidden flex flex-col md:flex-row opacity-0 transition-all duration-300"
-                    style={{ transitionDelay: `${index * 100}ms` }}
-                  >
-                    <div className="h-48 md:h-auto md:w-1/3">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-6 flex flex-col justify-between md:w-2/3">
-                      <div>
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-xl font-serif font-bold">{item.name}</h3>
-                          <div className="font-medium text-primary">${item.price}</div>
-                        </div>
-                        <p className="text-muted-foreground mb-4">{item.description}</p>
-                        <div className="flex space-x-2 mb-4">
-                          {item.tags?.map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2 py-1 bg-secondary text-xs rounded-full text-muted-foreground"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <Button
-                        variant={selectedItems.includes(item.id) ? "default" : "outline"}
-                        size="sm"
-                        className={selectedItems.includes(item.id) ? "bg-primary text-white" : ""}
-                        onClick={() => toggleItemSelection(item.id)}
-                      >
-                        {selectedItems.includes(item.id) ? "Added to Order" : "Add to Order"}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                {renderMenuItems(filteredItems)}
               </div>
             </TabsContent>
           </Tabs>

@@ -62,7 +62,7 @@ const Navbar = () => {
                   "text-sm font-medium tracking-wider transition-colors hover:text-primary",
                   location.pathname === link.path 
                     ? "text-primary" 
-                    : "text-muted-foreground"
+                    : scrolled ? "text-muted-foreground" : "text-white"
                 )}
               >
                 {link.name.toUpperCase()}
@@ -76,7 +76,7 @@ const Navbar = () => {
           
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden text-primary"
+            className={cn("md:hidden", scrolled ? "text-primary" : "text-white")}
             onClick={toggleMenu}
             aria-label="Toggle menu"
           >
